@@ -1,48 +1,68 @@
+import * as React from 'react';
 import {EventEmitter} from 'events';
 import Color = require('color');
 
-export class MyCanvas extends EventEmitter {
+interface Props {
+}
+
+interface State {
+}
+
+export class MyCanvas extends React.Component<Props, State> {
     private _canvas: HTMLCanvasElement = null;
     private _ctx: CanvasRenderingContext2D = null;
-    private _state: object = {};
+    private _color: Color.Color = Color('#000');
 
-    constructor() {
-        super();
-        let canvas = document.createElement( "canvas" );
-        canvas.width = 640;
-        canvas.height = 480;
-        canvas.style.width = "640px";
-        canvas.style.height = "480px";
-        canvas.style.border = "1px solid black";
-        canvas.style.cursor = "crosshair";
-        this._canvas = canvas;
-        this._ctx = canvas.getContext('2d');
+    constructor(props: Props) {
+        super(props);
+        this.state = {};
+    }
 
-        // Bind event handlers
-        this.onPointerMove = this.onPointerMove.bind( this );
-        this.onKeyPress = this.onKeyPress.bind( this );
+    render() {
+        const canvasStyle = {
+            width: '640px',
+            height: '480px',
+            border: '1px solid black',
+            cursor: 'crosshair'
+        } as React.CSSProperties;
 
-        // Add event listeners
-        canvas.addEventListener( 'pointermove', this.onPointerMove );
-        window.addEventListener( 'keydown', this.onKeyPress );
+        return (
+        <canvas 
+            ref={r=>this._canvas=r}
+            width={640} 
+            height={480} 
+            style={canvasStyle}
+        />
+        );
+    }
 
+    componentDidMount() {
         // Initialize context
+        this._ctx = this._canvas.getContext('2d');
         this._ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         this._ctx.globalCompositeOperation = 'multiply';
+
+        // Add event listeners
+        this.onPointerMove = this.onPointerMove.bind( this );
+        this._canvas.addEventListener( 'pointermove', this.onPointerMove );
+        this.onKeyPress = this.onKeyPress.bind( this );
+        window.addEventListener( 'keydown', this.onKeyPress );
     }
 
-    get domElement(): HTMLElement { return this._canvas; }
-    setState(newState: object) {
-        this._state = Object.assign(this._state, newState);
+    componentWillUnmount() {
+        this._canvas.removeEventListener( 'pointermove', this.onPointerMove );
+        window.removeEventListener( 'keydown', this.onKeyPress );
     }
 
-    addListener(event: 'pointermove', listener: (evt: PointerEvent) => void);
-    addListener(event: string, listener: (...args: any[]) => void) {
-        super.addListener(event, listener);
-    }
+    // get domElement(): HTMLElement { return this._canvas; }
+
+    // addListener(event: 'pointermove', listener: (evt: PointerEvent) => void);
+    // addListener(event: string, listener: (...args: any[]) => void) {
+    //     super.addListener(event, listener);
+    // }
 
     private onPointerMove(evt: PointerEvent) {
-        this.emit("pointermove", evt);
+        // this.emit("pointermove", evt);
         if (evt.pressure <= 0) return;
         const g = this._ctx;
         //console.log( [evt.tiltX, evt.tiltY] );
@@ -57,7 +77,7 @@ export class MyCanvas extends EventEmitter {
 
         let stepAlpha = baseAlpha / steps;
         //g.fillStyle = `rgba(0, 0, 0, ${Math.min(1, stepAlpha)}`;
-        let color = this._state["color"] as Color.Color || Color("#000");
+        let color = this._color || Color("#000");
         color = color.alpha(Math.min(1, stepAlpha));
         g.fillStyle = color.string();
         for (let i = 1; i <= steps; i++) {
@@ -82,5 +102,10 @@ export class MyCanvas extends EventEmitter {
         if (evt.code === 'Delete') {
             this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         }
+    }
+
+    set color(value: Color.Color) { 
+        this._color = value; 
+        //console.log( value );
     }
 }

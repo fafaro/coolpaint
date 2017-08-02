@@ -1,7 +1,7 @@
 const path = require('path');
 
 const config = {
-  entry: './src/index.ts',
+  entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js'
@@ -17,8 +17,9 @@ const config = {
   //     path.resolve(__dirname, "src/components"), 
   //     "node_modules"
   //   ],
-     extensions: ['.ts', '.js']
-   }
+     extensions: ['.tsx', '.ts', '.js']
+   },
+   devtool: "source-map"
 };
 
 module.exports = config;
