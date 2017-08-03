@@ -11,7 +11,13 @@ interface Props {
 interface State {
 }
 
+interface CanvasLayer {
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+}
+
 export class MyCanvas extends React.Component<Props, State> {
+    private readonly NUM_ONIONS = 4;
     private _canvas: HTMLCanvasElement = null;
     private _ctx: CanvasRenderingContext2D = null;
     private _color: Color.Color = Color('#000');
@@ -19,6 +25,8 @@ export class MyCanvas extends React.Component<Props, State> {
     private _height: number = 480;
     private _frameData = [];
     private _frame = 0;
+
+    private _onionLayers = [] as CanvasLayer[];
 
     constructor(props: Props) {
         super(props);
@@ -28,20 +36,47 @@ export class MyCanvas extends React.Component<Props, State> {
     }
 
     render() {
+        const onionStyle = {
+            width: `${this._width}px`,
+            height: `${this._height}px`,
+            position: 'absolute',
+            opacity: 0.5,
+        } as React.CSSProperties;
+
         const canvasStyle = {
             width: `${this._width}px`,
             height: `${this._height}px`,
             border: '1px solid black',
-            cursor: 'crosshair'
+            cursor: 'crosshair',
+            opacity: 0.75,
         } as React.CSSProperties;
 
+        let onions = [];
+        let setOnion = (canvas: HTMLCanvasElement, index: number) => {
+            if (!canvas) return; // component unmounted
+            let layer = { canvas: canvas, context: null };
+            layer.context = layer.canvas.getContext('2d');
+            this._onionLayers[index] = layer;
+        };
+        for (let i = 0; i < this.NUM_ONIONS; i++) {
+            let c = <canvas 
+                ref={r=>setOnion(r, this.NUM_ONIONS - 1 - i)} 
+                width={this._width}
+                height={this._height}
+                style={onionStyle} />
+            onions.push( c );
+        }
+
         return (
-        <canvas 
-            ref={r=>this._canvas=r}
-            width={this._width} 
-            height={this._height} 
-            style={canvasStyle}
-        />
+            <div style={{display: 'inline-block', position:'relative'}}>
+                { onions }
+                <canvas 
+                    ref={r=>this._canvas=r}
+                    width={this._width} 
+                    height={this._height} 
+                    style={canvasStyle}
+                />
+            </div>
         );
     }
 
@@ -49,7 +84,7 @@ export class MyCanvas extends React.Component<Props, State> {
         // Initialize context
         this._ctx = this._canvas.getContext('2d');
         this._ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this._ctx.globalCompositeOperation = 'multiply';
+        //this._ctx.globalCompositeOperation = 'multiply';
         this.clear();
 
         this.onPointerMove = this.onPointerMove.bind( this );
@@ -71,6 +106,17 @@ export class MyCanvas extends React.Component<Props, State> {
             this._ctx.putImageData( this._frameData[this._frame], 0, 0 );
         else
             this.clear();
+
+        // update onion layers
+        for (let i = 0; i < this.NUM_ONIONS; i++) {
+            let layer = this._onionLayers[i];
+            layer.context.clearRect(0, 0, this._width, this._height);
+            // let layerFrame = this._frame - this.NUM_ONIONS + i;
+            let layerFrame = this._frame - i - 1;
+            if (layerFrame >= 0) {
+                layer.context.putImageData(this._frameData[layerFrame], 0, 0);
+            }
+        }
     }
 
     clear() {
@@ -95,7 +141,7 @@ export class MyCanvas extends React.Component<Props, State> {
         let [x, y] = [evt.offsetX, evt.offsetY];
         let [dx, dy] = [evt.movementX, evt.movementY];
         let [oldx, oldy] = [x - dx, y - dy];
-        let radius = evt.pressure * 5;
+        let radius = evt.pressure * 2;
         let baseAlpha = evt.pressure / 0.2;
 
         let dist = Math.max(Math.abs(dx), Math.abs(dy));
@@ -137,5 +183,10 @@ export class MyCanvas extends React.Component<Props, State> {
     set color(value: Color.Color) { 
         this._color = value; 
         //console.log( value );
+    }
+
+    get frames(): Iterable<ImageData> {
+        this._frameData[this._frame] = this._ctx.getImageData(0, 0, this._width, this._height);
+        return this._frameData;
     }
 }

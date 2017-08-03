@@ -8,6 +8,7 @@ import {DataSignal}          from './models/DataSignal';
 import {MyCanvas}            from './components/MyCanvas';
 import {ColorPalette}        from './components/ColorPalette';
 import {SignalGraph}         from './components/SignalGraph';
+import {GifMaker}            from './components/GifMaker';
 
 class UserSession {
     @observable color = Color('#000');
@@ -89,6 +90,7 @@ class App extends React.Component<any, any> {
             <input type='text' readOnly={true} size={1} value={us.frame} />
             <button onClick={()=>us.gotoFrame(us.frame + 1)}>&gt;</button>
             <KeyboardShortcuts app={this} />
+            <GifMaker canvas={() => this.canvas} />
         </div>);
     }
 

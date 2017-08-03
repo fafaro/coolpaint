@@ -13,5 +13,8 @@
   "license": "ISC",
   "devDependencies": {
     "typescript": "^2.4.2"
+  },
+  "dependencies": {
+    "gif.js": "^0.2.0"
   }
 }
